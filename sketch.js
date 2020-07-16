@@ -6,8 +6,8 @@ if (window.innerWidth < 800) {
 let assets = [];
 
 // Debug
-let SHOW_MOVE = true;
-let SHOW_MOVES_WEIGHT = true;
+let SHOW_MOVE = false;
+let SHOW_MOVES_WEIGHT = false;
 
 // Colors
 let AI_PIECES_COLOR = 'black';
@@ -97,6 +97,16 @@ function mouseReleased() {
           // Capture a piece
           board.movePiece(pieceSelected, col, row);
           pieceSelected = null;
+          setTimeout(() => {
+            if (!isInCheckmate(players.AI)) {
+              if (isKingInCheck(players.AI)) {
+                console.log('King in check !');
+              }
+              currentPlayer = players.AI;
+            } else {
+              console.log('Checkmate !');
+            }
+          }, 500);
         }
       }
     } else if (pieceSelected) {
@@ -107,22 +117,91 @@ function mouseReleased() {
         pieceSelected = null;
         return;
       } else {
-        board.movePiece(pieceSelected, col, row);
-        pieceSelected = null;
-        // let result = checkWinner();
-        // if (result) {
-        //   end = true;
-        //   currentPlayer = null;
-        // } else {
-        //   currentPlayer = players.AI;
-        // }
+        board.testMove(pieceSelected, col, row).then((isSafe) => {
+          if (isSafe) {
+            board.movePiece(pieceSelected, col, row);
+          } else {
+            console.log('You cannot do this move, because of your king will be in check');
+          }
+          pieceSelected = null;
+        });
+        setTimeout(() => {
+          if (!isInCheckmate(players.AI)) {
+            if (isKingInCheck(players.AI)) {
+              console.log('King in check !');
+            }
+            currentPlayer = players.AI;
+          } else {
+            console.log('Checkmate !');
+          }
+        }, 500);
       }
     }
   }
 }
 
-function checkWinner() {
-  let winner = null;
+function AI() {
+  if (currentPlayer === players.AI) {
+    let bestMove = getBestMove();
+    let piece = board.getPiece(bestMove.from.col, bestMove.from.row);
+    board.movePiece(piece, bestMove.to.col, bestMove.to.row);
+    setTimeout(() => {
+      if (!isInCheckmate(players.HUMAN)) {
+        if (isKingInCheck(players.HUMAN)) {
+          console.log('King in check !');
+        }
+        currentPlayer = players.HUMAN;
+      } else {
+        console.log('Checkmate !');
+      }
+    }, 500);
+  }
+}
 
-  return winner;
+/**
+ * Return true if the king will be in check in the position given.
+ * @param {String} player - The player of the king piece
+ * @param {Board} b - A board (by default the displayed board)
+ */
+function isKingInCheck(player, b = board) {
+  let king = b.getKingPiece(player);
+  let opponent = player === players.AI ? players.HUMAN : players.AI;
+  let opponentPieces = b.getAllPieces(opponent);
+
+  // Test if an opponent move can capture the piece at the position (col, row)
+  for (let piece of opponentPieces) {
+    let moves = piece.getAvailableMoves(b);
+    for (let move of moves) {
+      if (move.to.col === king.col && move.to.row === king.row) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Test if a player is in checkmate
+ * @param {String} player - The player to test
+ * @param {Board} b - A board (by default the displayed board)
+ */
+function isInCheckmate(player, b = board) {
+  if (isKingInCheck(player, b)) {
+    let cloneBoard = clone(b);
+    let pieces = cloneBoard.getAllPieces(player);
+
+    for (let piece of pieces) {
+      let moves = piece.getAvailableMoves(b);
+      for (let move of moves) {
+        let boardClone = clone(b);
+        let pieceClone = clone(piece);
+        boardClone.movePiece(pieceClone, move.to.col, move.to.row);
+        if (!isKingInCheck(player, boardClone)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  return false;
 }

@@ -185,7 +185,11 @@ class Piece {
     }
   }
 
-  getAvailableMoves() {
+  /**
+   * Get all the available moves of the piece
+   * @param {Board} b - A board (by default the displayed board)
+   */
+  getAvailableMoves(b = board) {
     let moves = [];
     let directions = getPatternMoves(this);
     let opponent = this._player === players.AI ? players.HUMAN : players.AI;
@@ -197,7 +201,7 @@ class Piece {
      * @param {Number} row - The row to check the move
      */
     function canMove(col, row) {
-      return board.contains(col, row) && !board.hasPiece(col, row);
+      return b.contains(col, row) && !b.hasPiece(col, row);
     }
 
     /**
@@ -207,27 +211,30 @@ class Piece {
      */
     function canCapturePiece(col, row) {
       return (
-        board.contains(col, row) &&
-        board.hasPiece(col, row) &&
-        board.getPiece(col, row).player === opponent
+        b.contains(col, row) &&
+        b.hasPiece(col, row) &&
+        b.getPiece(col, row).player === opponent
       );
     }
 
     if (this._type === pieceTypes.PAWN) {
       // At the first move, we can move the pawn with 1 or 2 squares
       if (this._row === 1 || this._row === 6) {
-        for (let d of directions) {
-          let to = { col: from.col + d.col, row: from.row + d.row };
-          if (canMove(to.col, to.row)) {
-            moves.push(new Move(from, to, 0, null));
+        // The pawn cannot jump over a piece front of it
+        if (canMove(this._col + directions[0].col, this._row + directions[0].row)) {
+          for (let d of directions) {
+            let to = { col: from.col + d.col, row: from.row + d.row };
+            if (canMove(to.col, to.row)) {
+              moves.push(new Move(from, to, 0, null));
+            }
           }
         }
-        // Check if it can capturing a piece on the diagonal
+        // Check if it can capture a piece on the diagonal
         let drow = this._player === players.AI ? 1 : -1;
         for (let i = -1; i <= 1; i += 2) {
           if (canCapturePiece(from.col + i, from.row + drow)) {
             let to = { col: from.col + i, row: from.row + drow };
-            let capturedPiece = board.getPiece(from.col + i, from.row + drow);
+            let capturedPiece = b.getPiece(from.col + i, from.row + drow);
             moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
           }
         }
@@ -242,7 +249,7 @@ class Piece {
         for (let i = -1; i <= 1; i += 2) {
           if (canCapturePiece(from.col + i, from.row + drow)) {
             let to = { col: from.col + i, row: from.row + drow };
-            let capturedPiece = board.getPiece(from.col + i, from.row + drow);
+            let capturedPiece = b.getPiece(from.col + i, from.row + drow);
             moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
           }
         }
@@ -250,17 +257,16 @@ class Piece {
     } else if (this._type === pieceTypes.KING) {
       for (let d of directions) {
         let to = { col: from.col + d.col, row: from.row + d.row };
+        // Add the available moves
         if (canMove(to.col, to.row)) {
           moves.push(new Move(from, to, 0, null));
         }
         if (canCapturePiece(to.col, to.row)) {
-          let capturedPiece = board.getPiece(to.col, to.row);
+          let capturedPiece = b.getPiece(to.col, to.row);
           moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
         }
       }
-    }
-    // All other pieces
-    else {
+    } else {
       for (let d of directions) {
         // If the piece moves to a next squares
         if (isFinite(from.col + d.col) && isFinite(from.row + d.row)) {
@@ -271,7 +277,7 @@ class Piece {
           }
           // Move and capture a piece
           if (canCapturePiece(to.col, to.row)) {
-            let capturedPiece = board.getPiece(to.col, to.row);
+            let capturedPiece = b.getPiece(to.col, to.row);
             moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
           }
         } else {
@@ -288,10 +294,10 @@ class Piece {
           }
 
           // Check if we arrived on a opponent piece or out the board
-          // If it's on a opponent piece, we add this move as a capturing
+          // If it's on a opponent piece, we add this move as a capturing move
           let to = { col: current.col + dcol, row: current.row + drow };
           if (canCapturePiece(to.col, to.row)) {
-            let capturedPiece = board.getPiece(to.col, to.row);
+            let capturedPiece = b.getPiece(to.col, to.row);
             moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
           }
         }

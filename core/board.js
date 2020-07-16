@@ -72,6 +72,38 @@ class Board {
   }
 
   /**
+   * Get all the pieces on the board. If a player is specifying, return all
+   * the pieces of this player.
+   * @param {String} player - One of the player (human or ai)
+   */
+  getAllPieces(player) {
+    if (player) {
+      let result = [];
+      for (let piece of this._pieces) {
+        if (piece.player === player) {
+          result.push(piece);
+        }
+      }
+      return result;
+    } else {
+      return this._pieces;
+    }
+  }
+
+  /**
+   * Get the king piece of a player
+   * @param {String} player
+   */
+  getKingPiece(player) {
+    let pieces = this.getAllPieces(player);
+    for (let piece of pieces) {
+      if (piece.type === pieceTypes.KING) {
+        return piece;
+      }
+    }
+  }
+
+  /**
    * Get the number of pieces
    * @param {String} player - The player to count the pieces
    */
@@ -101,6 +133,25 @@ class Board {
   }
 
   /**
+   * Do a move virtually to test if a king is not in check after
+   * @param {Piece} piece - The piece to move
+   * @param {Number} col - The column where to move the piece
+   * @param {Number} row - The row where to move the piece
+   */
+  testMove(piece, col, row) {
+    return new Promise((resolve) => {
+      // Clone the piece and the board
+      let boardClone = clone(board);
+      let pieceClone = clone(piece);
+      boardClone.movePiece(pieceClone, col, row);
+
+      // Verify if the king is always safe after the move
+      let isSafe = !isKingInCheck(piece.player, boardClone);
+      resolve(isSafe);
+    });
+  }
+
+  /**
    * Move a piece to a new position
    * @param {Piece} piece - The piece to move
    * @param {Number} toCol - The destination column
@@ -121,7 +172,16 @@ class Board {
         // Animation
         piece.animate(move);
 
-        // Update the piece
+        // Update the piece in array
+        for (let p of this._pieces) {
+          if (p.col === piece.col && p.row === piece.row) {
+            p.col = toCol;
+            p.row = toRow;
+            break;
+          }
+        }
+
+        // Update the piece in the parameters
         piece.col = toCol;
         piece.row = toRow;
 
@@ -129,7 +189,7 @@ class Board {
         // base row, it becomes queen
         if (
           piece.type === pieceTypes.PAWN &&
-          (toRow === 0 || toRow === board.numCol - 1)
+          (toRow === 0 || toRow === this._numCol - 1)
         ) {
           piece.type = pieceTypes.QUEEN;
         }

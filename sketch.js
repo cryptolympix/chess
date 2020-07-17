@@ -61,6 +61,7 @@ function setup() {
 }
 
 function reset() {
+  loop();
   end = false;
   currentPlayer = players.HUMAN;
   board = new Board(CW);
@@ -73,6 +74,10 @@ function draw() {
   drawGameInfo();
   board.draw();
   drawButton();
+
+  if (end && !pieceInAnimation) {
+    noLoop();
+  }
 
   if (currentPlayer === players.AI && !pieceInAnimation) {
     setTimeout(() => {
@@ -92,6 +97,7 @@ function drawGameInfo() {
 
 function drawButton() {
   resetButton.html(`<span>Reset</span>`);
+  resetButton.style('opacity', currentPlayer === players.AI ? 0.7 : 1);
   resetButton.class('button');
 }
 

@@ -3,11 +3,19 @@ if (window.innerWidth < 800) {
   CW = (9 * window.innerWidth) / 10;
 }
 
+// Icons for the pieces
 let assets = [];
 
-// Debug
+// Containers
+let infoView;
+let gameMsg;
+let gameMsgColor;
+
+// Config
 let SHOW_MOVE = false;
 let SHOW_MOVES_WEIGHT = false;
+let SHOW_ANIMATION = true;
+let MINIMAX_MAX_DEPTH = 2;
 
 // Colors
 let AI_PIECES_COLOR = 'black';
@@ -16,6 +24,9 @@ let PIECE_SELECTED_COLOR = 'red';
 let DARK_SQUARE_COLOR = '#232323';
 let LIGHT_SQUARE_COLOR = 'white';
 let SHOW_COLOR = 'green';
+let AI_INFO_COLOR = 'darkgoldenrod';
+let HUMAN_INFO_COLOR = 'cornflowerblue';
+let ALERT_INFO_COLOR = 'firebrick';
 
 let end;
 let board;
@@ -40,6 +51,7 @@ function preload() {
 }
 
 function setup() {
+  infoView = createDiv();
   createCanvas(CW, CW);
   reset();
 }
@@ -48,11 +60,29 @@ function reset() {
   end = false;
   currentPlayer = players.HUMAN;
   board = new Board(CW);
+  gameMsg = "It's your turn";
+  gameMsgColor = HUMAN_INFO_COLOR;
 }
 
 function draw() {
   background(255);
+  drawGameInfo();
   board.draw();
+
+  if (currentPlayer === players.AI && !pieceInAnimation) {
+    setTimeout(() => {
+      AI();
+    }, 500);
+  }
+}
+
+function drawGameInfo() {
+  infoView.html(
+    `<div class="info-block">
+      <p class="game-msg" style="color: ${gameMsgColor}">${gameMsg}</p>
+    </div>`
+  );
+  infoView.id('info');
 }
 
 function mouseReleased() {
@@ -86,27 +116,28 @@ function mouseReleased() {
     if (board.hasPiece(col, row)) {
       let piece = board.getPiece(col, row);
       if (!pieceSelected) {
-        // if (piece.player === players.HUMAN) {
-        pieceSelected = piece;
-        // }
+        if (piece.player === players.HUMAN) {
+          pieceSelected = piece;
+        }
       } else {
         let piece = board.getPiece(col, row);
         if (piece.player === players.HUMAN) {
           pieceSelected = piece;
         } else {
           // Capture a piece
-          board.movePiece(pieceSelected, col, row);
-          pieceSelected = null;
-          setTimeout(() => {
-            if (!isInCheckmate(players.AI)) {
-              if (isKingInCheck(players.AI)) {
-                console.log('King in check !');
-              }
-              currentPlayer = players.AI;
+          board.testMove(pieceSelected, col, row).then((isSafe) => {
+            // The king is safe if the move is choosen
+            if (isSafe) {
+              board.movePiece(pieceSelected, col, row);
+              checkWinner().then((end) => {
+                currentPlayer = end ? null : players.AI;
+              });
             } else {
-              console.log('Checkmate !');
+              gameMsg = "You can't do this move";
+              gameMsgColor = ALERT_INFO_COLOR;
             }
-          }, 500);
+            pieceSelected = null;
+          });
         }
       }
     } else if (pieceSelected) {
@@ -118,23 +149,18 @@ function mouseReleased() {
         return;
       } else {
         board.testMove(pieceSelected, col, row).then((isSafe) => {
+          // The king is safe if the move is choosen
           if (isSafe) {
             board.movePiece(pieceSelected, col, row);
+            checkWinner().then((end) => {
+              currentPlayer = end ? null : players.AI;
+            });
           } else {
-            console.log('You cannot do this move, because of your king will be in check');
+            gameMsg = "You can't do this move";
+            gameMsgColor = ALERT_INFO_COLOR;
           }
           pieceSelected = null;
         });
-        setTimeout(() => {
-          if (!isInCheckmate(players.AI)) {
-            if (isKingInCheck(players.AI)) {
-              console.log('King in check !');
-            }
-            currentPlayer = players.AI;
-          } else {
-            console.log('Checkmate !');
-          }
-        }, 500);
       }
     }
   }
@@ -142,19 +168,12 @@ function mouseReleased() {
 
 function AI() {
   if (currentPlayer === players.AI) {
-    let bestMove = getBestMove();
+    let bestMove = getBestMove(MINIMAX_MAX_DEPTH);
     let piece = board.getPiece(bestMove.from.col, bestMove.from.row);
     board.movePiece(piece, bestMove.to.col, bestMove.to.row);
-    setTimeout(() => {
-      if (!isInCheckmate(players.HUMAN)) {
-        if (isKingInCheck(players.HUMAN)) {
-          console.log('King in check !');
-        }
-        currentPlayer = players.HUMAN;
-      } else {
-        console.log('Checkmate !');
-      }
-    }, 500);
+    checkWinner().then((end) => {
+      currentPlayer = end ? null : players.HUMAN;
+    });
   }
 }
 
@@ -197,11 +216,47 @@ function isInCheckmate(player, b = board) {
         let pieceClone = clone(piece);
         boardClone.movePiece(pieceClone, move.to.col, move.to.row);
         if (!isKingInCheck(player, boardClone)) {
+          boardClone = null;
+          pieceClone = null;
           return false;
         }
       }
     }
+    boardClone = null;
+    pieceClone = null;
     return true;
   }
   return false;
+}
+
+/**
+ * Check if a player get checkmated or if a king is in check
+ * @returns if the part ends or not
+ */
+function checkWinner() {
+  return new Promise((resolve) => {
+    let opponent = currentPlayer === players.AI ? players.HUMAN : players.AI;
+    if (!isInCheckmate(opponent)) {
+      if (isKingInCheck(opponent)) {
+        gameMsg = 'King in check !';
+        gameMsgColor = ALERT_INFO_COLOR;
+      } else {
+        // Message for the next player
+        if (opponent === players.AI) {
+          gameMsg = 'AI is searching a move...';
+          gameMsgColor = AI_INFO_COLOR;
+        } else {
+          gameMsg = "It's your turn";
+          gameMsgColor = HUMAN_INFO_COLOR;
+        }
+      }
+      resolve(false); // End false
+    } else {
+      gameMsg = 'Checkmate !';
+      gameMsgColor = ALERT_INFO_COLOR;
+      currentPlayer = null;
+      end = true;
+      resolve(true); // End true
+    }
+  });
 }

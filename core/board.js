@@ -169,8 +169,10 @@ class Board {
         this._tab[piece.col][piece.row] = null;
         this._tab[toCol][toRow] = piece;
 
-        // Animation
-        piece.animate(move);
+        // Animation only on the displayed board
+        if (SHOW_ANIMATION && this === board) {
+          piece.animate(move);
+        }
 
         // Update the piece in array
         for (let p of this._pieces) {

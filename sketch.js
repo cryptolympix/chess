@@ -8,8 +8,7 @@ let assets = [];
 
 // Containers
 let infoView;
-let gameMsg;
-let gameMsgColor;
+let resetButton;
 
 // Config
 let SHOW_MOVE = false;
@@ -27,6 +26,9 @@ let SHOW_COLOR = 'green';
 let AI_INFO_COLOR = 'darkgoldenrod';
 let HUMAN_INFO_COLOR = 'cornflowerblue';
 let ALERT_INFO_COLOR = 'firebrick';
+
+let gameMsg;
+let gameMsgColor;
 
 let end;
 let board;
@@ -53,6 +55,8 @@ function preload() {
 function setup() {
   infoView = createDiv();
   createCanvas(CW, CW);
+  resetButton = createButton();
+  resetButton.mousePressed(() => reset());
   reset();
 }
 
@@ -68,6 +72,7 @@ function draw() {
   background(255);
   drawGameInfo();
   board.draw();
+  drawButton();
 
   if (currentPlayer === players.AI && !pieceInAnimation) {
     setTimeout(() => {
@@ -83,6 +88,11 @@ function drawGameInfo() {
     </div>`
   );
   infoView.id('info');
+}
+
+function drawButton() {
+  resetButton.html(`<span>Reset</span>`);
+  resetButton.class('button');
 }
 
 function mouseReleased() {

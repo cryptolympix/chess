@@ -37,10 +37,10 @@ function getBestMove(depth) {
 
 function alphabeta(board, depth, alpha, beta, isMaximizingPlayer) {
   if (depth === 0) {
-    if (isInCheckmate(players.HUMAN)) return 100;
-    if (isInCheckmate(players.AI)) return -100;
-    if (isKingInCheck(players.HUMAN)) return 50;
-    if (isKingInCheck(players.AI)) return -50;
+    if (isInCheckmate(players.HUMAN)) return 50;
+    if (isInCheckmate(players.AI)) return -50;
+    if (isKingInCheck(players.HUMAN)) return 1;
+    if (isKingInCheck(players.AI)) return -1;
     return 0;
   }
 

@@ -9,6 +9,8 @@ let assets = [];
 // Containers
 let infoView;
 let resetButton;
+
+// Messages
 let gameMsg;
 let gameMsgColor;
 

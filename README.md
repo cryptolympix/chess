@@ -1,6 +1,6 @@
 # Chess
 
-Try to beat the artificial intelligence in the game of chess.
+Try to beat the artificial intelligence in the chess game.
 
 ![screenshot of the game](./screenshot.png)
 

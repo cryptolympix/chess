@@ -48,7 +48,10 @@ function getAvailableMoves(piece, b = board) {
         for (let d of directions) {
           let to = { col: from.col + d.col, row: from.row + d.row };
           if (canMove(to.col, to.row)) {
-            moves.push(new Move(from, to, 0, null));
+            // A pawn that arrives in the opponent base becomes a queen
+            moves.push(
+              new Move(from, to, isInOpponentBase(row, piece.player) ? 5 : 0, null)
+            );
           }
         }
       }

@@ -254,3 +254,15 @@ function movePiece(piece, move, b = board) {
     }
   }
 }
+
+/**
+ * Check if a piece is in the opponent base
+ * @param {String} player
+ */
+function isInOpponentBase(row, player) {
+  if (player === players.AI) {
+    return row === BOARD_NUM_COL - 1;
+  } else {
+    return row === 0;
+  }
+}

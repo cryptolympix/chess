@@ -114,9 +114,6 @@ function drawGameInfo() {
 
 function drawButton() {
   resetButton.html(`<span>Reset</span>`);
-  if (currentPlayer === players.AI) {
-    resetButton.style('opacity', 0.6);
-  }
   resetButton.class('button');
 }
 

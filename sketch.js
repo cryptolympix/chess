@@ -9,16 +9,16 @@ let assets = [];
 // Containers
 let infoView;
 let resetButton;
+let gameMsg;
+let gameMsgColor;
 
 // Config
 let SHOW_MOVE = false;
 let SHOW_MOVES_WEIGHT = false;
 let SHOW_ANIMATION = true;
-let MINIMAX_MAX_DEPTH = 2;
+let MINIMAX_MAX_DEPTH = 1;
 
 // Colors
-let AI_PIECES_COLOR = 'black';
-let HUMAN_PIECES_COLOR = 'white';
 let PIECE_SELECTED_COLOR = 'red';
 let DARK_SQUARE_COLOR = '#232323';
 let LIGHT_SQUARE_COLOR = 'white';
@@ -27,13 +27,20 @@ let AI_INFO_COLOR = 'darkgoldenrod';
 let HUMAN_INFO_COLOR = 'cornflowerblue';
 let ALERT_INFO_COLOR = 'firebrick';
 
-let gameMsg;
-let gameMsgColor;
-
-let end;
+// Board
+let BOARD_PXL_DIM = CW;
+let BOARD_NUM_COL = 8;
+let BOARD_SQUARE_DIM = CW / BOARD_NUM_COL;
 let board;
+
+// Gameplay
+let end;
+
+// Player
 let players = { HUMAN: 'human', AI: 'ai' };
 let currentPlayer;
+
+// Pieces
 let pieceSelected;
 let pieceInAnimation;
 
@@ -56,7 +63,7 @@ function setup() {
   infoView = createDiv();
   createCanvas(CW, CW);
   resetButton = createButton();
-  resetButton.mousePressed(() => reset());
+  initEventListeners();
   reset();
 }
 
@@ -64,15 +71,23 @@ function reset() {
   loop();
   end = false;
   currentPlayer = players.HUMAN;
-  board = new Board(CW);
+  board = initBoard();
   gameMsg = "It's your turn";
   gameMsgColor = HUMAN_INFO_COLOR;
+}
+
+function initEventListeners() {
+  resetButton.mousePressed(() => {
+    reset();
+    resetButton.style('opacity', 0.7);
+  });
+  resetButton.mouseReleased(() => resetButton.style('opacity', 1));
 }
 
 function draw() {
   background(255);
   drawGameInfo();
-  board.draw();
+  drawBoard();
   drawButton();
 
   if (end && !pieceInAnimation) {
@@ -97,25 +112,24 @@ function drawGameInfo() {
 
 function drawButton() {
   resetButton.html(`<span>Reset</span>`);
-  resetButton.style('opacity', currentPlayer === players.AI ? 0.7 : 1);
+  if (currentPlayer === players.AI) {
+    resetButton.style('opacity', 0.6);
+  }
   resetButton.class('button');
 }
 
 function mouseReleased() {
-  if (
-    end ||
-    mouseX < 0 ||
-    mouseX > board.pixelDim ||
-    mouseY < 0 ||
-    mouseY > board.pixelDim
-  )
+  if (end) return;
+  if (mouseX < 0 || mouseX > BOARD_PXL_DIM || mouseY < 0 || mouseY > BOARD_PXL_DIM) {
+    if (pieceSelected) pieceSelected = null;
     return;
+  }
 
   /**
-   * Find a mose specifying a destination
+   * Find a move specifying a destination
    * @param {Number} toCol - The column of the destination
    * @param {Number} toRow - The row of the destination
-   * @param {Number} moves - An array of moves
+   * @param {Array<Move>} moves - An array of moves
    */
   function findMove(toCol, toRow, moves) {
     for (let move of moves) {
@@ -125,71 +139,74 @@ function mouseReleased() {
     }
   }
 
-  if (currentPlayer === players.HUMAN) {
-    let col = floor(mouseX / board.squareDim);
-    let row = floor(mouseY / board.squareDim);
+  /**
+   *
+   * @param {Piece} piece
+   * @param {Number} col
+   * @param {Number} row
+   */
+  function makeMove(piece, col, row) {
+    let moves = getAvailableMoves(piece);
+    let wishedMove = findMove(col, row, moves);
+    if (!wishedMove) {
+      pieceSelected = null;
+      return;
+    } else {
+      // Test if the king is safe after a move
+      testMove(pieceSelected, wishedMove).then(({ isSafe }) => {
+        if (isSafe) {
+          movePiece(pieceSelected, wishedMove);
+          checkWinner().then((end) => {
+            currentPlayer = end ? null : players.AI;
+          });
+        } else {
+          gameMsg = "You can't do this move";
+          gameMsgColor = ALERT_INFO_COLOR;
+        }
+        pieceSelected = null;
+      });
+    }
+  }
 
-    if (board.hasPiece(col, row)) {
-      let piece = board.getPiece(col, row);
+  if (currentPlayer === players.HUMAN) {
+    let col = floor(mouseX / BOARD_SQUARE_DIM);
+    let row = floor(mouseY / BOARD_SQUARE_DIM);
+
+    if (board[col][row]) {
+      let piece = board[col][row];
       if (!pieceSelected) {
         if (piece.player === players.HUMAN) {
           pieceSelected = piece;
         }
       } else {
-        let piece = board.getPiece(col, row);
         if (piece.player === players.HUMAN) {
           pieceSelected = piece;
         } else {
-          // Capture a piece
-          board.testMove(pieceSelected, col, row).then((isSafe) => {
-            // The king is safe if the move is choosen
-            if (isSafe) {
-              board.movePiece(pieceSelected, col, row);
-              checkWinner().then((end) => {
-                currentPlayer = end ? null : players.AI;
-              });
-            } else {
-              gameMsg = "You can't do this move";
-              gameMsgColor = ALERT_INFO_COLOR;
-            }
-            pieceSelected = null;
-          });
+          makeMove(pieceSelected, col, row);
         }
       }
     } else if (pieceSelected) {
-      let moves = pieceSelected.getAvailableMoves();
-      let wishedMove = findMove(col, row, moves);
-
-      if (!wishedMove) {
-        pieceSelected = null;
-        return;
-      } else {
-        board.testMove(pieceSelected, col, row).then((isSafe) => {
-          // The king is safe if the move is choosen
-          if (isSafe) {
-            board.movePiece(pieceSelected, col, row);
-            checkWinner().then((end) => {
-              currentPlayer = end ? null : players.AI;
-            });
-          } else {
-            gameMsg = "You can't do this move";
-            gameMsgColor = ALERT_INFO_COLOR;
-          }
-          pieceSelected = null;
-        });
-      }
+      makeMove(pieceSelected, col, row);
     }
   }
 }
 
+/**
+ * The AI plays
+ */
 function AI() {
   if (currentPlayer === players.AI) {
-    let bestMove = getBestMove(MINIMAX_MAX_DEPTH);
-    let piece = board.getPiece(bestMove.from.col, bestMove.from.row);
-    board.movePiece(piece, bestMove.to.col, bestMove.to.row);
-    checkWinner().then((end) => {
-      currentPlayer = end ? null : players.HUMAN;
-    });
+    getBestMove(MINIMAX_MAX_DEPTH)
+      .then((bestMove) => {
+        let piece = board[bestMove.from.col][bestMove.from.row];
+        movePiece(piece, bestMove);
+        checkWinner().then((end) => {
+          currentPlayer = end ? null : players.HUMAN;
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
 }
 
@@ -199,13 +216,13 @@ function AI() {
  * @param {Board} b - A board (by default the displayed board)
  */
 function isKingInCheck(player, b = board) {
-  let king = b.getKingPiece(player);
+  let king = getKingPiece(player, b);
   let opponent = player === players.AI ? players.HUMAN : players.AI;
-  let opponentPieces = b.getAllPieces(opponent);
+  let opponentPieces = getAllPieces(opponent, b);
 
   // Test if an opponent move can capture the piece at the position (col, row)
   for (let piece of opponentPieces) {
-    let moves = piece.getAvailableMoves(b);
+    let moves = getAvailableMoves(piece, b);
     for (let move of moves) {
       if (move.to.col === king.col && move.to.row === king.row) {
         return true;
@@ -222,24 +239,18 @@ function isKingInCheck(player, b = board) {
  */
 function isInCheckmate(player, b = board) {
   if (isKingInCheck(player, b)) {
-    let cloneBoard = clone(b);
-    let pieces = cloneBoard.getAllPieces(player);
-
+    let pieces = getAllPieces(player, b);
     for (let piece of pieces) {
-      let moves = piece.getAvailableMoves(b);
+      let moves = getAvailableMoves(piece, b);
       for (let move of moves) {
         let boardClone = clone(b);
         let pieceClone = clone(piece);
-        boardClone.movePiece(pieceClone, move.to.col, move.to.row);
+        movePiece(pieceClone, move, boardClone);
         if (!isKingInCheck(player, boardClone)) {
-          boardClone = null;
-          pieceClone = null;
           return false;
         }
       }
     }
-    boardClone = null;
-    pieceClone = null;
     return true;
   }
   return false;
@@ -268,7 +279,7 @@ function checkWinner() {
       }
       resolve(false); // End false
     } else {
-      gameMsg = 'Checkmate !';
+      gameMsg = `${opponent === players.AI ? 'AI' : 'You'} get checkmated !`;
       gameMsgColor = ALERT_INFO_COLOR;
       currentPlayer = null;
       end = true;

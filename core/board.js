@@ -1,6 +1,6 @@
 /**
  * Init a board
- * @returns {Array<Array>} A board
+ * @returns a board
  */
 function initBoard() {
   let b;
@@ -51,8 +51,7 @@ function initBoard() {
 }
 
 /**
- * Draw a board
- * @param {Array<Array>} b - A board (by default the displayed board)
+ * Draw the board
  */
 function drawBoard() {
   let dim = BOARD_SQUARE_DIM;

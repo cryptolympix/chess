@@ -244,8 +244,7 @@ function movePiece(piece, move, b = board) {
       piece.col = toCol;
       piece.row = toRow;
 
-      // If the piece moved is a pawn and arrives at the opponent
-      // base row, it becomes queen
+      // If the piece moved is a pawn and arrives at the opponent base row, it becomes queen
       if (
         piece.type === pieceTypes.PAWN &&
         (toRow === 0 || toRow === BOARD_NUM_COL - 1)

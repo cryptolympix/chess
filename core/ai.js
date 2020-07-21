@@ -1,6 +1,7 @@
 /**
  * Search the best move with alpha beta pruning algorithm
  * @param {Number} depth - The maximum depth of tree
+ * @returns a move
  */
 async function getBestMove(depth) {
   let bestScore = -Infinity;

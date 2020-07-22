@@ -38,7 +38,7 @@ async function getBestMove(depth) {
           bestMoves = [];
           bestScore = score;
         }
-        if (score === bestScore) {
+        if (score == bestScore) {
           bestMoves.push(move);
         }
       }
@@ -60,20 +60,9 @@ async function getBestMove(depth) {
 }
 
 function alphabeta(board, depth, alpha, beta, isMaximizingPlayer) {
-  // If the previous has captured the king, we don't need to calculate the next nodes of the tree
-  let maximizingPlayer = isMaximizingPlayer ? players.AI : players.HUMAN;
-  if (!getKingPiece(maximizingPlayer, board)) {
-    return 0;
-  }
-
-  // We calculate the value of the leafs
-  if (depth === 0) {
-    if (isInCheckmate(players.HUMAN, board)) return 50;
-    if (isInCheckmate(players.AI, board)) return -50;
-    if (isKingInCheck(players.HUMAN, board)) return 5;
-    if (isKingInCheck(players.AI, board)) return -5;
-    return 0;
-  }
+  let player = isMaximizingPlayer ? players.AI : players.HUMAN;
+  if (isInCheckmate(player, board)) return isMaximizingPlayer ? -50 : 50;
+  if (depth == 0) return 0;
 
   if (isMaximizingPlayer) {
     let bestScore = -Infinity;

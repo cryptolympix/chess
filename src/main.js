@@ -18,7 +18,7 @@ let gameMsgColor;
 let SHOW_MOVE = false;
 let SHOW_MOVES_WEIGHT = false;
 let SHOW_ANIMATION = true;
-let MINIMAX_MAX_DEPTH = 1;
+let MINIMAX_MAX_DEPTH = 1; // The AI anticipates the plays up to 2 laps in advance.
 
 // Colors
 let PIECE_SELECTED_COLOR = 'red';
@@ -70,12 +70,12 @@ function setup() {
 }
 
 function reset() {
-  loop();
   end = false;
   currentPlayer = players.HUMAN;
   board = initBoard();
   gameMsg = "It's your turn";
   gameMsgColor = HUMAN_INFO_COLOR;
+  loop();
 }
 
 function initEventListeners() {

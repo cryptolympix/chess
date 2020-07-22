@@ -139,17 +139,17 @@ function mouseReleased() {
   }
 
   /**
-   *
-   * @param {Piece} piece
-   * @param {Number} col
-   * @param {Number} row
+   * Check if the destination selected is reachable by a move, if the king after this move is
+   * always safe and if the opponent has his king in check or is in checkmate.
+   * @param {Piece} piece - The piece to move
+   * @param {Number} col - The destination column of the move
+   * @param {Number} row - The destination row of the move
    */
   function makeMove(piece, col, row) {
     let moves = getAvailableMoves(piece);
     let wishedMove = findMove(col, row, moves);
     if (!wishedMove) {
       pieceSelected = null;
-      return;
     } else {
       // Test if the king is safe after a move
       testMove(pieceSelected, wishedMove).then(({ isSafe }) => {

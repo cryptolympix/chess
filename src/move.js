@@ -48,10 +48,7 @@ function getAvailableMoves(piece, b = board) {
         for (let d of directions) {
           let to = { col: from.col + d.col, row: from.row + d.row };
           if (canMove(to.col, to.row)) {
-            // A pawn that arrives in the opponent base becomes a queen
-            moves.push(
-              new Move(from, to, isInOpponentBase(to.row, piece.player) ? 5 : 0, null)
-            );
+            moves.push(new Move(from, to, 0, null));
           }
         }
       }
@@ -68,7 +65,9 @@ function getAvailableMoves(piece, b = board) {
       // Move just to one square
       let to = { col: from.col + directions[0].col, row: from.row + directions[0].row };
       if (canMove(to.col, to.row)) {
-        moves.push(new Move(from, to, 0, null));
+        moves.push(
+          new Move(from, to, to.row === getOpponentBaseRow(piece.player) ? 5 : 0, null)
+        );
       }
       // Check if it can capturing a piece on the diagonal
       let drow = piece.player === players.AI ? 1 : -1;
@@ -76,7 +75,10 @@ function getAvailableMoves(piece, b = board) {
         if (canCapturePiece(from.col + i, from.row + drow)) {
           let to = { col: from.col + i, row: from.row + drow };
           let capturedPiece = b[to.col][to.row];
-          moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
+          let bonusWeight = to.row === getOpponentBaseRow(piece.player) ? 5 : 0;
+          moves.push(
+            new Move(from, to, capturedPiece.weight + bonusWeight, capturedPiece)
+          );
         }
       }
     }

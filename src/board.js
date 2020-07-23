@@ -129,3 +129,15 @@ function getNumberOfPieces(player, b = board) {
 function contains(col, row) {
   return col >= 0 && col < BOARD_NUM_COL && row >= 0 && row < BOARD_NUM_COL;
 }
+
+/**
+ * Get the opponent base row for a player
+ * @param {String} player
+ */
+function getOpponentBaseRow(player) {
+  if (player === players.AI) {
+    return BOARD_NUM_COL - 1;
+  } else {
+    return 0;
+  }
+}

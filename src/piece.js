@@ -245,24 +245,9 @@ function movePiece(piece, move, b = board) {
       piece.row = toRow;
 
       // If the piece moved is a pawn and arrives at the opponent base row, it becomes queen
-      if (
-        piece.type === pieceTypes.PAWN &&
-        (toRow === 0 || toRow === BOARD_NUM_COL - 1)
-      ) {
+      if (piece.type === pieceTypes.PAWN && toRow === getOpponentBaseRow(piece.player)) {
         piece.type = pieceTypes.QUEEN;
       }
     }
-  }
-}
-
-/**
- * Check if a piece is in the opponent base
- * @param {String} player
- */
-function isInOpponentBase(row, player) {
-  if (player === players.AI) {
-    return row === BOARD_NUM_COL - 1;
-  } else {
-    return row === 0;
   }
 }

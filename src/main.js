@@ -18,7 +18,7 @@ let gameMsgColor;
 let SHOW_MOVE = false;
 let SHOW_MOVES_WEIGHT = false;
 let SHOW_ANIMATION = true;
-let MINIMAX_MAX_DEPTH = 1; // The AI anticipates the plays up to 2 laps in advance.
+let MINIMAX_MAX_DEPTH = 1; // The AI anticipates the plays up to MINIMAX_MAX_DEPTH + 1 laps in advance.
 
 // Colors
 let PIECE_SELECTED_COLOR = 'red';
@@ -199,12 +199,14 @@ function AI() {
       .then((bestMove) => {
         let piece = board[bestMove.from.col][bestMove.from.row];
         movePiece(piece, bestMove);
-        checkWinner().then((end) => {
-          currentPlayer = end ? null : players.HUMAN;
-        });
       })
       .catch((err) => {
         console.error(err);
+      })
+      .then(() => {
+        checkWinner().then((end) => {
+          currentPlayer = end ? null : players.HUMAN;
+        });
       });
   }
 }
@@ -262,6 +264,15 @@ function isInCheckmate(player, b = board) {
 function checkWinner() {
   return new Promise((resolve) => {
     let opponent = currentPlayer === players.AI ? players.HUMAN : players.AI;
+
+    if (!hasAvailableMoves(opponent)) {
+      gameMsg = `${opponent === players.AI ? 'AI' : 'You'} can't play anymore`;
+      gameMsgColor = ALERT_INFO_COLOR;
+      currentPlayer = null;
+      end = true;
+      resolve(true); // End true
+    }
+
     if (!isInCheckmate(opponent)) {
       if (isKingInCheck(opponent)) {
         gameMsg = 'King in check !';

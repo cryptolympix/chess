@@ -1,7 +1,7 @@
 /**
  * Search the best move with alpha beta pruning algorithm
  * @param {Number} depth - The maximum depth of tree
- * @returns a move
+ * @returns a promise
  */
 async function getBestMove(depth) {
   let bestScore = -Infinity;
@@ -61,6 +61,13 @@ async function getBestMove(depth) {
 
 function alphabeta(board, depth, alpha, beta, isMaximizingPlayer) {
   let player = isMaximizingPlayer ? players.AI : players.HUMAN;
+
+  // We don't consider the sub tree when the king has been captured
+  if (!getKingPiece(player, board)) {
+    return isMaximizingPlayer ? -Infinity : Infinity;
+  }
+
+  // Conditions to get a leaf in the tree
   if (isInCheckmate(player, board)) return isMaximizingPlayer ? -50 : 50;
   if (depth == 0) return 0;
 

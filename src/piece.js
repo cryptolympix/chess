@@ -190,64 +190,125 @@ function createPieceAnimation(piece, move) {
 }
 
 /**
- * Do a move virtually to test if a king is not in check after
- * @param {Piece} piece - The piece to move
- * @param {Number} move - The move to test
- * @param {Array<Array>} b - A board (by default the displayed board)
- * @returns is the king is safe after the move
- */
-function testMove(piece, move, b = board) {
-  return new Promise((resolve) => {
-    // Clone the piece and the board
-    let boardClone = clone(b);
-    let pieceClone = clone(piece);
-    movePiece(pieceClone, move, boardClone);
-
-    // Verify if the king is always safe after the moves
-    let isSafe = !isKingInCheck(piece.player, boardClone);
-    resolve({ isSafe, piece, move, board: b });
-  });
-}
-
-/**
- * Move a piece to a new position
- * @param {Piece} piece - The piece to move
- * @param {Number} move - The move to do
+ * Get all the available moves of a piece
+ * @param {Piece} piece - A piece
  * @param {Array<Array>} b - A board (by default the displayed board)
  */
-function movePiece(piece, move, b = board) {
-  if (piece.col !== move.from.col && piece.row !== move.from.row) {
-    return;
+function getAvailableMoves(piece, b = board) {
+  let moves = [];
+  let directions = getPatternMoves(piece);
+  let opponent = piece.player === players.AI ? players.HUMAN : players.AI;
+  let from = { col: piece.col, row: piece.row };
+
+  /**
+   * Return true if a move is available to the position (col, row)
+   * @param {Number} col - The column to check the move
+   * @param {Number} row - The row to check the move
+   */
+  function canMove(col, row) {
+    return contains(col, row) && !b[col][row];
   }
 
-  let toCol = move.to.col;
-  let toRow = move.to.row;
-  let moves = getAvailableMoves(piece, b);
+  /**
+   * Return true if a captured move is available to the position (col, row)
+   * @param {Number} col - The column to check the move
+   * @param {Number} row - The row to check the move
+   */
+  function canCapturePiece(col, row) {
+    return contains(col, row) && b[col][row] && b[col][row].player === opponent;
+  }
 
-  for (let move of moves) {
-    if (move.to.col === toCol && move.to.row === toRow) {
-      if (move.capturedPiece) {
-        let capturedPiece = move.capturedPiece;
-        b[capturedPiece.col][capturedPiece.row] = null;
-        capturedPiece = null;
+  if (piece.type === pieceTypes.PAWN) {
+    // At the first move, we can move the pawn with 1 or 2 squares
+    if (piece.row === 1 || piece.row === 6) {
+      // The pawn cannot jump over a piece front of it
+      if (canMove(piece.col + directions[0].col, piece.row + directions[0].row)) {
+        for (let d of directions) {
+          let to = { col: from.col + d.col, row: from.row + d.row };
+          if (canMove(to.col, to.row)) {
+            moves.push(new Move(from, to, 0, null));
+          }
+        }
       }
-      // Update the tab
-      b[piece.col][piece.row] = null;
-      b[toCol][toRow] = piece;
-
-      // Animation only on the displayed board
-      if (SHOW_ANIMATION && b === board) {
-        createPieceAnimation(piece, move);
+      // Check if it can capture a piece on the diagonal
+      let drow = piece.player === players.AI ? 1 : -1;
+      for (let i = -1; i <= 1; i += 2) {
+        if (canCapturePiece(from.col + i, from.row + drow)) {
+          let to = { col: from.col + i, row: from.row + drow };
+          let capturedPiece = b[to.col][to.row];
+          moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
+        }
       }
+    } else {
+      // Move just to one square
+      let to = { col: from.col + directions[0].col, row: from.row + directions[0].row };
+      if (canMove(to.col, to.row)) {
+        moves.push(
+          new Move(from, to, to.row === getOpponentBaseRow(piece.player) ? 5 : 0, null)
+        );
+      }
+      // Check if it can capturing a piece on the diagonal
+      let drow = piece.player === players.AI ? 1 : -1;
+      for (let i = -1; i <= 1; i += 2) {
+        if (canCapturePiece(from.col + i, from.row + drow)) {
+          let to = { col: from.col + i, row: from.row + drow };
+          let capturedPiece = b[to.col][to.row];
+          let bonusWeight = to.row === getOpponentBaseRow(piece.player) ? 5 : 0;
+          moves.push(
+            new Move(from, to, capturedPiece.weight + bonusWeight, capturedPiece)
+          );
+        }
+      }
+    }
+  } else if (piece.type === pieceTypes.KING) {
+    for (let d of directions) {
+      let to = { col: from.col + d.col, row: from.row + d.row };
+      // Add the available moves
+      if (canMove(to.col, to.row)) {
+        moves.push(new Move(from, to, 0, null));
+      }
+      if (canCapturePiece(to.col, to.row)) {
+        let capturedPiece = b[to.col][to.row];
+        moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
+      }
+    }
+  } else {
+    for (let d of directions) {
+      // If the piece moves to a next squares
+      if (isFinite(from.col + d.col) && isFinite(from.row + d.row)) {
+        let to = { col: from.col + d.col, row: from.row + d.row };
+        // Move to a free square
+        if (canMove(to.col, to.row)) {
+          moves.push(new Move(from, to, 0, null));
+        }
+        // Move and capture a piece
+        if (canCapturePiece(to.col, to.row)) {
+          let capturedPiece = b[to.col][to.row];
+          moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
+        }
+      } else {
+        // Get the directions with finite values
+        let dcol = !isFinite(d.col) ? (d.col === -Infinity ? -1 : 1) : d.col;
+        let drow = !isFinite(d.row) ? (d.row === -Infinity ? -1 : 1) : d.row;
 
-      // Update the piece in the parameters
-      piece.col = toCol;
-      piece.row = toRow;
+        // Add all the available moves on the line (the piece slides)
+        let current = from;
+        while (canMove(current.col + dcol, current.row + drow)) {
+          let to = { col: current.col + dcol, row: current.row + drow };
+          moves.push(new Move(from, to, 0, null));
+          current = to;
+        }
 
-      // If the piece moved is a pawn and arrives at the opponent base row, it becomes queen
-      if (piece.type === pieceTypes.PAWN && toRow === getOpponentBaseRow(piece.player)) {
-        piece.type = pieceTypes.QUEEN;
+        // Check if we arrived on a opponent piece or out the board
+        // If it's on a opponent piece, we add this move as a capturing move
+        let to = { col: current.col + dcol, row: current.row + drow };
+        if (canCapturePiece(to.col, to.row)) {
+          let capturedPiece = b[to.col][to.row];
+          moves.push(new Move(from, to, capturedPiece.weight, capturedPiece));
+        }
       }
     }
   }
+
+  return moves;
 }

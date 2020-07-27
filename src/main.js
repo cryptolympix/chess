@@ -195,7 +195,7 @@ function mouseReleased() {
  */
 function AI() {
   if (currentPlayer === players.AI) {
-    getBestMove(MINIMAX_MAX_DEPTH)
+    getBestMove()
       .then((bestMove) => {
         let piece = board[bestMove.from.col][bestMove.from.row];
         movePiece(piece, bestMove);

@@ -3,7 +3,7 @@
  * @param {Number} depth - The maximum depth of tree
  * @returns a promise
  */
-async function getBestMove(depth) {
+async function getBestMove(depth = MINIMAX_MAX_DEPTH) {
   let bestScore = -Infinity;
   let bestMoves = [];
   let promises = [];
@@ -34,6 +34,8 @@ async function getBestMove(depth) {
         movePiece(pieceClone, move, boardClone);
         let score =
           alphabeta(boardClone, depth, -Infinity, Infinity, false) + move.weight;
+        boardClone = null;
+        pieceClone = null;
         if (score > bestScore) {
           bestMoves = [];
           bestScore = score;

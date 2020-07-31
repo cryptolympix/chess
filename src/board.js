@@ -34,11 +34,11 @@ function initBoard() {
         b[i][7] = new Piece(i, 7, pieceTypes.BISHOP, players.HUMAN);
         break;
       case 3:
-        b[i][0] = new Piece(i, 0, pieceTypes.KING, players.AI);
+        b[i][0] = new Piece(i, 0, pieceTypes.QUEEN, players.AI);
         b[i][7] = new Piece(i, 7, pieceTypes.QUEEN, players.HUMAN);
         break;
       case 4:
-        b[i][0] = new Piece(i, 0, pieceTypes.QUEEN, players.AI);
+        b[i][0] = new Piece(i, 0, pieceTypes.KING, players.AI);
         b[i][7] = new Piece(i, 7, pieceTypes.KING, players.HUMAN);
         break;
       default:

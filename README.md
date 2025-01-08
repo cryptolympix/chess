@@ -6,7 +6,7 @@ Try to beat the artificial intelligence in the chess game.
 
 # Demo
 
-https://mxjoly.github.io/chess/
+https://cryptolympix.github.io/chess/
 
 # Possible improvments
 
